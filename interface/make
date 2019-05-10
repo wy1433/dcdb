@@ -1,0 +1,8 @@
+#!/bin/bash
+python_path=./gen_py
+proto_path=./proto
+
+protoc --python_out=${python_path} --proto_path=${proto_path} ${proto_path}/metapb.proto
+protoc --python_out=${python_path} --proto_path=${proto_path} ${proto_path}/errorpb.proto
+protoc --python_out=${python_path} --proto_path=${proto_path} ${proto_path}/kvrpcpb.proto
+protoc --python_out=${python_path} --proto_path=${proto_path} ${proto_path}/dckvpb.proto
