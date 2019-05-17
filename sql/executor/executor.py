@@ -46,28 +46,6 @@ class RollBackExec(Executor):
         return self.ctx.session.RollbackTxn(self.ctx)
 
 
-class PointGetExec(Executor):
 
-    def __init__(self, ctx=None, col=None, key=None):
-        '''
-        @type ctx: Context
-        '''
-        super(PointGetExec, self).__init__(ctx)
-        self.col = col
-        self.key = key
-        
-    def Execute(self):
-        return self.ctx.txn.Get(self.key, self.col)
-
-
-class BatchGetExec(Executor):
-
-    def __init__(self, ctx=None, col=None, keys=None):
-        super(BatchGetExec, self).__init__(ctx)
-        self.col = col
-        self.keys = keys
-
-    def Execute(self):
-        return self.ctx.txn.BatchGet(self.keys, self.col)
     
     

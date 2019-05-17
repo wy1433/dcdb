@@ -79,7 +79,6 @@ class Session():
             self.RollbackTxn()
         txn = self.store.Begin()
         self.txn = txn  # session
-        ctx.txn = txn  # connect
         return None
     
     def CommitTxn(self, ctx):

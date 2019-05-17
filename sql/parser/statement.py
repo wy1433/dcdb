@@ -40,13 +40,28 @@ class Statement(object):
         pass
 
 class BeginStmt(Statement):
-    pass
+    def Parse(self):
+        keyword = self.text.lower()
+        if keyword =='begin':
+            return None
+        else:
+            return ErrInvalidSql
 
 class CommitStmt(Statement):
-    pass
+    def Parse(self):
+        keyword = self.text.lower()
+        if keyword =='commit':
+            return None
+        else:
+            return ErrInvalidSql
 
 class RollBackStmt(Statement):
-    pass
+    def Parse(self):
+        keyword = self.text.lower()
+        if keyword =='rollback':
+            return None
+        else:
+            return ErrInvalidSql
 
 
 class ExprNode(Statement):
@@ -78,10 +93,10 @@ class ExprNode(Statement):
             expr.Parse()
 
 
-class ConditionType(IntEnum):
-    ConditionTypeEquals       = 1 # no implemented
-    ConditionTypeIn           = 2 # no implemented
-    ConditionTypeRangeScan    = 3 
+# class ConditionType(IntEnum):
+#     ConditionTypeEquals       = 1
+#     ConditionTypeIn           = 2
+#     ConditionTypeRangeScan    = 3 
    
 
 class ConditionExpr(ExprNode):
@@ -105,7 +120,8 @@ class ConditionExpr(ExprNode):
         self.end = end
         self.value = value
         self.values = values
-        self.ConditionType = None
+        self.include_start = False
+        self.include_end = False
     
     def Parse(self):
         infos = self.text.split()
@@ -114,7 +130,6 @@ class ConditionExpr(ExprNode):
         if op == '>' :
             self.start = infos[2]
             self.end = None
-            self.ConditionType = ConditionType.ConditionTypeRangeScan
         elif op == '<':
             self.start = None
             self.end = infos[2]
@@ -124,11 +139,11 @@ class ConditionExpr(ExprNode):
             self.end = infos[4]
             self.ConditionType = ConditionType.ConditionTypeRangeScan
         elif op == '=':
-#             self.value = infos[2]
-#             self.ConditionType = ConditionType.ConditionTypeEquals
-            self.start = infos[2]
-            self.end = infos[2]
-            self.ConditionType = ConditionType.ConditionTypeRangeScan
+            self.value = infos[2]
+            self.ConditionType = ConditionType.ConditionTypeEquals
+#             self.start = infos[2]
+#             self.end = infos[2]
+#             self.ConditionType = ConditionType.ConditionTypeRangeScan
         elif op == 'in': # TODO
             self.values = [x.strip('(),') for x in infos[2:]]
             self.ConditionType = ConditionType.ConditionTypeIn
@@ -199,7 +214,7 @@ class SelectStmt(Statement):
 #         sql = '''SELECT a, b, c From t 
 #                 WHERE a > 10 
 #                 AND   b < -10 
-#                 OR    d between -10 in 10
+#                 OR    d between -10 and 10
 #                 OR    e in ("a","b","c")
 #                 AND   f = "foo"
 #                 '''
@@ -211,13 +226,13 @@ class SelectStmt(Statement):
         else:
             text = self.text
         
-        p = re.compile(r"select\s+(.*?)\s+from\s+(.*?)\s+where\s+(.*)\s+", re.I)
+        p = re.compile(r"select\s+(.*?)\s+from\s+(.*?)\s+where\s+(.*)", re.I)
         m = p.match(text)
         if m:
-            s, f, w = m.groups()
+            s, t, w = m.groups()
             self.Fields = s.split(',')
             self.Fields = [f.strip() for f in self.Fields]
-            self.Table = f
+            self.Table = t
             self.Where = ExprNode.GetExpr(w)
         else:
             return ErrInvalidSql

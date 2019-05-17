@@ -69,6 +69,7 @@ class Server():
     def WriteResult(self, ctx):
         '''
         @param ctx: Context
+        @return: dict
         '''
         resp = dict()
         if ctx.status:
@@ -77,11 +78,20 @@ class Server():
             resp['fields'] = ctx.fields
         if ctx.rows:
             resp['rows'] = ctx.rows
+        return resp
         
 if __name__ == '__main__':
     server = Server()
-    sql = "insert into student (id, name, age) values (1, 'foo', 10)"
-    ret =  server.Run(sql)
-    logger.debug(ret)
+    
+#     sql = "insert into student (id, name, age) values (1, 'foo', 10)"
+#     resp =  server.Run(sql)
+#     logger.debug(resp)
+#     sql = "insert into student (id, name, age) values (2, 'bob', 8)"
+#     resp =  server.Run(sql)
+#     logger.debug(resp)
+    
+    sql = "select id, name, age from student where id in (1, 2)"
+    resp =  server.Run(sql)
+    logger.debug(resp)
     
         

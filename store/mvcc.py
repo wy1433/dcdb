@@ -7,7 +7,9 @@ from collections import namedtuple
 
 from mylog import logger
 from util.error import ErrLocked, BaseError
-from util import codec
+# from util import codec
+from util.codec.number import *
+from util.codec.bytes import *
 import interface.gen_py.kvrpcpb_pb2 as kvrpcpb
    
 typePut = 0
@@ -28,19 +30,19 @@ class ErrInvalidEncodedKey(BaseError):
 def mvccEncode(key, ver):
     if key is None or key =="":
         return None
-    b = codec.EncodeBytes(key, "")
-    ret = codec.EncodeUintDesc(b, ver)
+    b = EncodeBytes(key, "")
+    ret = EncodeUintDesc(b, ver)
     return ret
 
 
 # mvccDecode parses the origin key and version of an encoded key, if the encoded key is a meta key,
 # just returns the origin key.
 def mvccDecode(encodedKey):
-    b, ver, err = codec.DecodeUintDesc(encodedKey)
+    b, ver, err = DecodeUintDesc(encodedKey)
     if err != None :
         # should never happen
         return None, 0, err
-    key, _, err = codec.DecodeBytes(b)
+    key, _, err = DecodeBytes(b)
     return key, ver, None
 
 class mvccValue():

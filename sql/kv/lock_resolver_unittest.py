@@ -134,7 +134,7 @@ class LockResolverTestCase(unittest.TestCase):
         # 0. init mutations
         txn.us.WalkBuffer()            
         # 1. prewrite mutations
-        err = txn.prewrite(Context())
+        err = txn.prewrite()
         self.assertEqual(err, None)
   
     def mustPrewriteErr(self, txn):
@@ -144,7 +144,7 @@ class LockResolverTestCase(unittest.TestCase):
         # 0. init mutations
         txn.us.WalkBuffer()            
         # 1. prewrite mutations
-        err = txn.prewrite(Context())
+        err = txn.prewrite()
         self.assertNotEqual(err, None)
     
     def mustGetLocks(self, keys, col):

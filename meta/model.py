@@ -55,5 +55,3 @@ class TableInfo():
         for c in self.columns: #: :type c: ColumnInfo
             c.SetTableInfo(self)
 
-
-

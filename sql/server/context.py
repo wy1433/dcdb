@@ -1,12 +1,12 @@
 class Status():
 
     def __init__(self, err=None, inTrans=False, autoCommit=True,
-                 foundRows=None, affectedRows=None, lastInsertId=0):
+                 foundRows=0, affectedRows=0, lastInsertId=0):
         '''
         @param err: util.error.KvError
         '''
         self.err = err
-        self.inTrans = inTrans
+#         self.inTrans = inTrans
         self.autoCommit = autoCommit
         self.foundRows = foundRows  # for select
         self.affectedRows = affectedRows  # for update/delete/insert
@@ -17,7 +17,7 @@ class Status():
         if self.err:
             info['code'] = self.err.code
             info['msg'] = self.err.msg
-        info['inTrans'] = self.inTrans
+#         info['inTrans'] = self.inTrans
         info['autoCommit'] = self.autoCommit
         if self.foundRows:
             info['foundRows'] = self.foundRows
@@ -26,6 +26,7 @@ class Status():
         if self.lastInsertId:
             info['lastInsertId'] = self.lastInsertId
         return info
+    
 
         
 class Context():

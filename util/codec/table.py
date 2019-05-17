@@ -1,5 +1,5 @@
 import unittest
-from meta.model import FieldType
+from meta.model import FieldType, IndexType
 from number import EncodeInt, DecodeInt
 from mylog import logger
 
@@ -8,7 +8,8 @@ def EncodeRowid(rowid):
     @param rowid: int
     @return: str
     '''
-    return '%08x' % rowid
+    # return '%08x' % rowid
+    return EncodeInt("", rowid)
 
 
 def DecodeRowid(s):
@@ -25,13 +26,13 @@ def EncodeValue(value, fieldType):
     @param fieldType: FieldType
     @return: str
     '''
-    v = value 
+    v = value
     if fieldType == FieldType.STR:
         v =  value
     elif fieldType == FieldType.INT:
         v_int64 = int(value)
         v = EncodeInt("", v_int64)
-    logger.debug('value=%s, encode_v=%s', value, v)
+#     logger.debug('value=%s, encode_v=%s', value, v)
     return v
 
     
@@ -49,15 +50,31 @@ def DecodeValue(s, fieldType):
         return v
 
 
-def EncodeIndexKey(rowid, value, fieldType):
-    r = EncodeRowid(rowid)
+def EncodeIndexKey(rowid, value, fieldType, indexType):
+    '''
+    @param rowid: int
+    @param value: value of column
+    @param fieldType: FieldType
+    @param indexType: IndexType
+    @return: str
+    '''
     v = EncodeValue(value, fieldType)
-    s = '%s.%s' % (v, r)
+    if indexType == IndexType.UNIQUE:
+        s = v
+    else:
+        r = EncodeRowid(rowid)
+        s = '%s.%s' % (v, r)
     return s
 
 
-def DecodeIndexKey(index_key):
-    v, r = index_key.rsplit(".", 1)
+def DecodeIndexKey(index_key, fieldType, indexType):
+    if indexType == IndexType.UNIQUE:
+        s = index_key
+        r = None
+    else:
+        s, r = index_key.rsplit(".", 1)
+    
+    v = DecodeValue(s, fieldType)
     return v, r
 
 # ## for unittest

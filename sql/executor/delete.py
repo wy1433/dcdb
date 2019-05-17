@@ -15,8 +15,10 @@ class DeleteExec(Executor):
        
         
     def Execute(self):
-        stmt = DeleteStmt()
-        BeginExec(self.ctx).Execute()
+        ctx = self.ctx #: :type ctx: Context
+        stmt = ctx.stmt #: :type stmt: InsertStmt
+        store = ctx.Store()
+        txn = ctx.Txn()
         
         rowids = ExprNodeExec(self.ctx, self.stmt.Where).Execute()
         

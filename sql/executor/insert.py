@@ -24,19 +24,21 @@ class InsertExec(Executor):
         table_info = store.meta.GetTableInfoByName(stmt.Table)
         rowid = store.meta.GetRowID(table_info.id)
         ctx.status.lastInsertId = rowid
+        ctx.status.affectedRows += 1
         
         for i in range(len(stmt.Fields)):
             field = stmt.Fields[i]
             value = stmt.Setlist[i]
             c = store.meta.GetColumnInfoByName(stmt.Table, field)
-            fieldType = c.fieldType
             dat = c.DataDBName()
             idx = c.IndexDBName()
             row_key = EncodeRowid(rowid)
-            row_val = EncodeValue(value, fieldType)
-            idx_key = EncodeIndexKey(rowid, value, fieldType)
+            row_val = EncodeValue(value, c.fieldType, c.indexType)
+            idx_key = EncodeIndexKey(rowid, value, c.fieldType, c.indexType)
             idx_val = EncodeValue(rowid, FieldType.INT)
-            ctx.txn.Set(row_key, row_val, dat)
-            ctx.txn.Set(idx_key, idx_val, idx)
+            txn.Insert(row_key, row_val, dat)
+            err = txn.Insert(idx_key, idx_val, idx)
+            if err:
+                return err
 
         

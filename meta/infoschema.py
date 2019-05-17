@@ -242,7 +242,7 @@ class TestInfoSchema(unittest.TestCase):
         c = self.dbinfo.GetColumnInfoByID(2, 2)
         self.assertEqual(c.table_info.name, 'test')
         self.assertEqual(c.name, 'course')
-        self.assertEqual(c.fieldType, FieldType.INT)
+        self.assertEqual(c.fieldType, FieldType.STR)
         self.assertEqual(c.indexType, IndexType.NORMAL)
         
     
@@ -260,7 +260,7 @@ class TestInfoSchema(unittest.TestCase):
         c = self.dbinfo.GetColumnInfoByName('test', 'course')
         self.assertEqual(c.table_info.name, 'test')
         self.assertEqual(c.name, 'course')
-        self.assertEqual(c.fieldType, FieldType.INT)
+        self.assertEqual(c.fieldType, FieldType.STR)
         self.assertEqual(c.indexType, IndexType.NORMAL)
     
     def test_EncodePrimary(self):

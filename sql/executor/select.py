@@ -2,17 +2,47 @@ from sql.server.context import Context
 from sql.parser.statement import *
 from sql.executor.executor import *
 from util.error import *
+from util.codec.table import *
 
 
 def HasIndex(col):
     return True
 
-def IndexKey(col, key):
-    return ""
+
+class PointGetExec(Executor):
+
+    def __init__(self, ctx=None, col=None, key=None):
+        '''
+        @type ctx: Context
+        '''
+        super(PointGetExec, self).__init__(ctx)
+        self.col = col
+        self.key = key
+        
+    def Execute(self):
+        ctx = self.ctx #: :type ctx: Context
+        stmt = ctx.stmt #: :type stmt: SelectStmt
+        store = ctx.Store()
+        txn = ctx.Txn()
+        c = store.meta.GetColumnInfoByName(stmt.Table, self.col)
+        
+        
+        return self.ctx.txn.Get(self.key, self.col)
+
+
+class BatchGetExec(Executor):
+
+    def __init__(self, ctx=None, col=None, keys=None):
+        super(BatchGetExec, self).__init__(ctx)
+        self.col = col
+        self.keys = keys
+
+    def Execute(self):
+        return self.ctx.txn.BatchGet(self.keys, self.col)
 
 class ColumnScanExec(Executor):
     def __init__(self, ctx=None, col = None, start = None, end = None):
-        super().__init__(ctx)
+        super(ColumnScanExec, self).__init__(ctx)
     def Execute(self):
         '''
         @todo: implemented. scan + filter
@@ -21,17 +51,39 @@ class ColumnScanExec(Executor):
 
 class IndexScanExec(Executor):
     def __init__(self, ctx=None, col = None, start = None, end = None):
-        super().__init__(ctx)
+        '''
+        @param ctx: Context
+        @param col: str
+        @param start: str
+        @param end: end
+        '''
+        super(IndexScanExec, self).__init__(ctx)
         self.col = col
-        self.start = IndexKey(col, start)
-        self.end = IndexKey(col, end)
+        self.start = start
+        self.end = end
         
     def Execute(self):
-        return self.ctx.txn.Scan(self.start, self.end, limit=None, col=self.col)
+        '''
+        @rtype: set, ErrExecutor
+        '''
+        ctx = self.ctx #: :type ctx: Context
+        stmt = ctx.stmt #: :type stmt: SelectStmt
+        store = ctx.Store()
+        txn = ctx.Txn()
+        c = store.meta.GetColumnInfoByName(stmt.Table, self.col)
+        idx = c.IndexDBName()
+        startKey = EncodeIndexKey(None, self.start, c.fieldType, c.indexType)
+        endKey = EncodeIndexKey(None, self.end, c.fieldType, c.indexType)
+        ret, err = txn.Scan(startKey, endKey, limit=None, col=idx) #: :type ret: dict
+        if err:
+            logger.warning('err %s' , err.ERROR())
+            return None, ErrExecutor
+        r = set(ret.viewvalues())
+        return r, None
 
 class RangeScanExec(Executor):
     def __init__(self, ctx=None, col = None, start = None, end = None):
-        super().__init__(ctx)
+        super(RangeScanExec, self).__init__(ctx)
         self.col = col
         self.start = start
         self.end = end
@@ -42,7 +94,6 @@ class RangeScanExec(Executor):
         else:
             e = ColumnScanExec(self.ctx, self.col, self.start, self.end)
         return e.Execute()    
-        
 
 
 class ConditionExec(Executor):
@@ -50,11 +101,15 @@ class ConditionExec(Executor):
         '''
         @type stmt: ConditionExpr
         '''
-        super().__init__(ctx)
+        super(ConditionExec, self).__init__(ctx)
         self.stmt = stmt
         
     def Execute(self):
-        if self.stmt.ConditionType == ConditionType.ConditionTypeRangeScan:
+        if self.stmt.ConditionType == ConditionType.ConditionTypeEquals:
+            return RangeScanExec(self.ctx, self.stmt.column, start= self.stmt.start, end=self.stmt.end).Execute()
+        elif self.stmt.ConditionType == ConditionType.ConditionTypeIn:
+            return RangeScanExec(self.ctx, self.stmt.column, start= self.stmt.start, end=self.stmt.end).Execute()
+        elif self.stmt.ConditionType == ConditionType.ConditionTypeRangeScan:
             return RangeScanExec(self.ctx, self.stmt.column, start= self.stmt.start, end=self.stmt.end).Execute()
         else:
             return ErrExecutor
@@ -64,7 +119,7 @@ class UnionExec(Executor):
         '''
         @type stmt: UnionExpr
         '''
-        super().__init__(ctx)
+        super(UnionExec, self).__init__(ctx)
         self.stmt = stmt
         
     def Execute(self):
@@ -77,7 +132,7 @@ class IntersectionExec(Executor):
         '''
         @type stmt: IntersectionExpr
         '''
-        super().__init__(ctx)
+        super(IntersectionExec, self).__init__(ctx)
         self.stmt = stmt
         
     def Execute(self):
@@ -88,15 +143,15 @@ class IntersectionExec(Executor):
 class ExprNodeExec(Executor):
     def __init__(self, ctx=None, expr = None):
         '''
-        @type Where: ExprNode
+        @param expr: ExprNode
         '''
-        super().__init__(ctx)
+        super(ExprNodeExec, self).__init__(ctx)
         self.expr = expr
         
     def Execute(self): 
-        if isinstance(self.Where, ConditionExpr):
+        if isinstance(self.expr, ConditionExpr):
             e = ConditionExec(self.ctx, self.expr)
-        elif isinstance(self.Where, UnionExpr):
+        elif isinstance(self.expr, UnionExpr):
             e = UnionExec(self.ctx, self.expr)
         else:
             e = IntersectionExec(self.ctx, self.expr)
@@ -106,18 +161,18 @@ class ExprNodeExec(Executor):
 class SelectExec(Executor):
     def __init__(self, ctx=None):
         '''
-        @type self.stmt: SelectStmt
+        @param ctx: Context
         '''
-        super().__init__(ctx)
+        super(SelectExec, self).__init__(ctx)
        
         
-    def Execute(self):
-        if False:
-            self.stmt = SelectStmt()
-        self.stmt = SelectStmt() 
-        BeginExec(self.ctx).Execute()
+    def Execute(self):        
+        ctx = self.ctx #: :type ctx: Context
+        stmt = ctx.stmt #: :type stmt: SelectStmt
+        store = ctx.Store()
+        txn = ctx.Txn()
         
-        rowids = ExprNodeExec(self.ctx, self.stmt.Where).Execute()
+        rowids = ExprNodeExec(ctx, stmt.Where).Execute()
         
         
         rs  = list()

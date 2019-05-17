@@ -126,7 +126,6 @@ class ColumnStoreTestCase(unittest.TestCase):
             'k1':'v1',
             'k2':'v2',
             'k3':'v3',
-            'k4':None,
             }
         self.mustBatchGetOK(keys, expect)
     

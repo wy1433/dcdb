@@ -50,6 +50,8 @@ class ColumnStore(object):
     
     def Delete(self, key):
 #         if self.membuf.has_key(key):
+        if key in self.insertKeys:
+            self.insertKeys.remove(key)
         self.membuf[key] = None
      
     def Set(self, key, value):
