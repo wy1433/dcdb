@@ -10,21 +10,17 @@ from mylog import logger
 import time
 from util.rwlock import RWLock
 from collections import OrderedDict
+from sql.parser.statement import SelectStmt, InsertStmt, DeleteStmt, UpdateStmt
 
 SessionTimeout = 30 * 60  # 30 minutes
 SessionMaxSize = 100
 
 # for debug
-SessionTimeout = 60 
-SessionMaxSize = 10
+# SessionTimeout = 60 
+# SessionMaxSize = 10
 
 
 class Session():
-    '''
-    
-    @type txn: Transaction
-    '''
-
     def __init__(self, session_id, store=None, txn=None):
         '''
         @param store: DckvStore
@@ -40,18 +36,29 @@ class Session():
     
     # Execute a sql statement.                                        
     def Execute(self, ctx):
-        if self.autocommit:
+        '''
+        @param ctx: Context
+        @return: err in parser or executor
+        '''
+        # 1. sql string to statement
+        err = self.parser.Parser(ctx)
+        
+        # 2. statement to executor
+        self.planner.BuildExecutor(ctx)
+        
+        # 3. executor to txn
+        if self.autocommit and self.IsDML(ctx):
             self.BeginTxn(ctx)
-            err = self.execute(ctx)
+            err = ctx.executor.Execute()
             if err:
                 self.RollbackTxn(ctx)
             else:
-                self.CommitTxn(ctx)
+                err = self.CommitTxn(ctx)
         else:
-            err = self.execute(ctx)
+            err = ctx.executor.Execute()
         return err
                                   
-    def execute(self, ctx):  # ([]sqlexec.RecordSet, error) 
+    def execute(self, ctx):
         '''
         @type ctx: Context
         '''
@@ -65,7 +72,13 @@ class Session():
         err = ctx.executor.Execute()
         
         return err
-        
+    
+    def IsDML(self, ctx):
+        '''
+        @param ctx: Context
+        '''
+        t = type(ctx.stmt)
+        return t in (SelectStmt, InsertStmt, DeleteStmt, UpdateStmt)
     
     def SetAutoCommit(self, auto):
         self.autocommit = auto
@@ -76,18 +89,17 @@ class Session():
         '''
         if self.TxnValid():
             logger.warning('rollback un-commited txn, startTS=%s', self.txn.startTS)
-            self.RollbackTxn()
+            return ErrTxnAlreadyExists
         txn = self.store.Begin()
-        self.txn = txn  # session
+        self.txn = txn  # set by session
         return None
     
     def CommitTxn(self, ctx):
-        '''Commit txn for Commit Executor
+        '''Commit or close txn 
         @param ctx: Context
         '''
-        self.SetAutoCommit(True)
         if not self.TxnValid():
-            return None
+            return ErrInvalidTxn
         
         if self.txn.IsReadOnly():
             err = self.txn.Close()
@@ -98,10 +110,13 @@ class Session():
     
     
     def RollbackTxn(self, ctx=None):
-        self.SetAutoCommit(True)
-        err = None
-        if self.TxnValid():
-            err = self.txn.Rollback()
+        '''rollback or close txn 
+        @param ctx: Context
+        '''
+        if not self.TxnValid():
+            return ErrInvalidTxn
+
+        err = self.txn.Rollback()
         return err
     
     def IsExpired(self):

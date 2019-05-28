@@ -1,6 +1,9 @@
+import time
+from util.codec import number
+
 class Status():
 
-    def __init__(self, err=None, inTrans=False, autoCommit=True,
+    def __init__(self, err=None, autoCommit=True,
                  foundRows=0, affectedRows=0, lastInsertId=0):
         '''
         @param err: util.error.KvError
@@ -26,8 +29,6 @@ class Status():
         if self.lastInsertId:
             info['lastInsertId'] = self.lastInsertId
         return info
-    
-
         
 class Context():
 
@@ -40,6 +41,7 @@ class Context():
         @param executor: sql.executor.executor.Executor
         @param status: Status
         '''
+        self.start_time = time.time()
         self.sql = sql  # set by server
         self.conn = conn  # set by conn
         self.session = session  # set by session
@@ -48,6 +50,7 @@ class Context():
         self.status = Status()  # set by executor
         self.fields = None  # set by executor
         self.rows = None  # set by executor
+        self.fieldTypes = None
         
     def Store(self):
         return self.session.store
@@ -60,4 +63,53 @@ class Context():
         @param err: util.error.KvError
         '''
         self.status.err = err
-            
+    
+    def TimeUsed(self):
+        end_time = time.time()
+        return end_time - self.start_time
+    
+def DataRowsString(fields, rows):
+    fi = ':>20d'
+    fs = ':<20s'
+    if not (rows and len(rows)):
+        return None
+    
+    info = ''
+    
+    sepline = '+'
+    for _ in xrange(len(fields)):
+        sepline += '{%s}+' % fs
+    sepline = sepline.format(*(['-'*20]*len(fields)))
+#     print sepline
+    info += '%s\n' % sepline
+    
+    title = '|'
+    for _ in xrange(len(fields)):
+        title += '{%s}|' % fs
+    title = title.format(*fields)
+#     print title
+    info += '%s\n' % title
+    info += '%s\n' % sepline
+    
+    frow = '|'
+    for i in xrange(len(fields)):
+        if isinstance(rows[0][i] , str):
+            f = fs
+        else:
+            f = fi
+        frow += '{%s}|' % f
+#     print frow
+    for row in rows:
+        r = frow.format(*row)
+        info += '%s\n' % r
+    info += '%s\n' % sepline
+    info += '%d rows in set (%.2f sec)' % (len(rows), 0)
+    return info
+        
+if __name__ == '__main__':
+    fields = ['id', 'name', 'age']
+    rows = [
+        [0L, 'n0', 5L], 
+        [1L, 'n1', 5L],
+        ]             
+    print DataRowsString(fields, rows) 

@@ -31,7 +31,7 @@ class Planner():
             executor = InsertExec(ctx)
         elif t == DeleteStmt:
             executor = DeleteExec(ctx)
-        elif t == UpdateStmt(ctx):
+        elif t == UpdateStmt:
             executor = UpdateExec(ctx)
             
         ctx.executor = executor

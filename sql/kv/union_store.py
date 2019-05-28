@@ -10,10 +10,13 @@ from meta.infoschema import EncodePrimary, DecodePrimary
 nil = None
 
 class ColumnStore(object):
+    '''ColumnStore is local membuf. 
+    @attention: write options must be ordered
+    '''
     def __init__(self, col, txn_id):
         self.col = col
         self.txn_id = txn_id
-        self.membuf = dict()
+        self.membuf = OrderedDict()
         self.lockKeys = set()
         self.insertKeys = set()
         self.mutations = list()
@@ -58,11 +61,15 @@ class ColumnStore(object):
         self.membuf[key] = value
     
     def Insert(self, key, value):
+        no_delete_before = True 
         if self.membuf.has_key(key):
             val = self.membuf[key]
             if val is not None:
                 return ErrKeyExists
-        self.insertKeys.add(key)
+            else:
+                no_delete_before = False
+        if no_delete_before:
+            self.insertKeys.add(key)
         self.Set(key, value)
     
     def Lockkey(self, key):
@@ -128,14 +135,26 @@ class UnionStore(object):
             self.cs[col] = cs    
         return self.cs[col]
     
+    def db(self, col):
+        '''
+        @rtype: ColumnStore
+        @return: ColumnStore
+        '''
+        if col not in self.cs:
+            cs = ColumnStore(col, self.txn_id)
+        else:        
+            cs = self.cs[col]
+        return cs
+    
+    
     def Get(self, key, col):
-        return self.DB(col).Get(key)
+        return self.db(col).Get(key)
     
     def BatchGet(self, keys, col):
-        return self.DB(col).BatchGet(keys)
+        return self.db(col).BatchGet(keys)
     
     def Scan(self, startKey, endKey, col):
-        return self.DB(col).Scan(startKey, endKey)
+        return self.db(col).Scan(startKey, endKey)
     
     def Delete(self, key, col):
         return self.DB(col).Delete(key)

@@ -35,7 +35,7 @@ code={2:app}{2:module}{2:class}{2:method}
 ##sql.kv.dckv = 010101**
 ErrSqlKvTxnGet = DBError(01010101, "Get Failed")
 ErrParser = DBError(100000, "Parser Failed")
-ErrSessionNewTxn = DBError(100001, "NewTxn Failed")
+ErrTxnAlreadyExists = DBError(100001, "NewTxn Failed, commit or rollback first")
 ErrExecutor = DBError(100002, "Executor Failed")
 
 

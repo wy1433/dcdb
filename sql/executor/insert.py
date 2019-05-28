@@ -4,7 +4,6 @@ from sql.parser.statement import *
 from sql.executor.executor import *
 from util.error import *
 from util.codec.table import *
-from select import ExprNodeExec
 from mylog import logger
 
 
@@ -33,7 +32,7 @@ class InsertExec(Executor):
             dat = c.DataDBName()
             idx = c.IndexDBName()
             row_key = EncodeRowid(rowid)
-            row_val = EncodeValue(value, c.fieldType, c.indexType)
+            row_val = EncodeValue(value, c.fieldType)
             idx_key = EncodeIndexKey(rowid, value, c.fieldType, c.indexType)
             idx_val = EncodeValue(rowid, FieldType.INT)
             txn.Insert(row_key, row_val, dat)

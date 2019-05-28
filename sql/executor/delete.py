@@ -2,42 +2,52 @@ from sql.server.context import Context
 from sql.parser.statement import *
 from sql.executor.executor import *
 from util.error import *
-from select import ExprNodeExec
+from util.codec.table import *
+from sql.executor.select import ExprNodeExec, PointGetExec, BatchGetExec
 
 
 
 class DeleteExec(Executor):
+
     def __init__(self, ctx=None):
         '''
-        @type self.stmt: DeleteStmt
+        @param ctx: Context
         '''
-        super().__init__(ctx)
-       
+        super(DeleteExec, self).__init__(ctx)
         
-    def Execute(self):
-        ctx = self.ctx #: :type ctx: Context
-        stmt = ctx.stmt #: :type stmt: InsertStmt
+    def Execute(self):        
+        ctx = self.ctx  # : :type ctx: Context
+        stmt = ctx.stmt  # : :type stmt: DeleteStmt
         store = ctx.Store()
+        
+        # 1. get rowids from where
+        rowids, err = ExprNodeExec(ctx, stmt.Where).Execute() #: :type rowids: set(str)
+        if err:
+            return err
+        
+        
+        # 2. set to sorted list 
+        rids = list(rowids)
+        rids.sort()
+        
         txn = ctx.Txn()
+        ctx.status.affectedRows += len(rids)
         
-        rowids = ExprNodeExec(self.ctx, self.stmt.Where).Execute()
+        # 3. get field's key/value by rids, and delete the data and idx at the same time
+        t = store.meta.GetTableInfoByName(stmt.Table)
         
-        rs  = list()
-        if len(rowids) == 0:
-            pass
-        elif len(rowids) == 1:
-            f = PointGetExec(self.ctx, 'row_id').Execute()
-            rs.append(f)
-        else:
-            f = BatchGetExec(self.ctx, 'row_id').Execute()
-            rs.append(f)
-        
-        for col in stmt.Table.Columns:
-            for i in range(len(rowids)):
-                key = rowids[i]
-                value = rs[i]
-            self.ctx.txn.Set(EncodeKey(col, key), v = None,col= col)
-            self.ctx.txn.Set(EncodeIndex(col, key, value),v= None, col= col)
-
-        CommitExec(self.ctx).Execute()
-        
+        for c in t.columns:
+            field = c.name
+            if field == 'row_id':
+                continue
+            dat = c.DataDBName()
+            idx = c.IndexDBName()
+            d, err = BatchGetExec(self.ctx, field, rids).Execute() #: :type d: dict(str, str)
+            if err:
+                return ErrExecutor
+            for row_key, encode_value in d.iteritems():
+                rowid = DecodeRowid(row_key)
+                value = DecodeValue(encode_value, c.fieldType)
+                idx_key = EncodeIndexKey(rowid, value, c.fieldType, c.indexType)
+                txn.Delete(row_key, dat)
+                txn.Delete(idx_key, idx)        

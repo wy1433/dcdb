@@ -4,7 +4,7 @@ from sql.parser.statement import Statement, ResultField
 
 class Executor(object):
 
-    def __init__(self, ctx = None):
+    def __init__(self, ctx=None):
         '''
         @param ctx: Context
         '''
@@ -23,8 +23,9 @@ class BeginExec(Executor):
         super(BeginExec, self).__init__(ctx)
         
     def Execute(self):
-        self.ctx.session.SetAutoCommit(False)
-        _, err = self.ctx.session.Txn(self.ctx)
+        err = self.ctx.session.BeginTxn(self.ctx)
+        if err is None:
+            self.ctx.session.SetAutoCommit(False)
         return err
 
     
@@ -34,7 +35,10 @@ class CommitExec(Executor):
         super(CommitExec, self).__init__(ctx)
         
     def Execute(self):
-        return self.ctx.session.CommitTxn(self.ctx)
+        err = self.ctx.session.CommitTxn(self.ctx)
+        if err is None:
+            self.ctx.session.SetAutoCommit(True)
+        return err
 
     
 class RollBackExec(Executor):
@@ -43,9 +47,8 @@ class RollBackExec(Executor):
         super(RollBackExec, self).__init__(ctx)
         
     def Execute(self):
-        return self.ctx.session.RollbackTxn(self.ctx)
+        err = self.ctx.session.RollbackTxn(self.ctx)
+        if err is None:
+            self.ctx.session.SetAutoCommit(True)
+        return err
 
-
-
-    
-    

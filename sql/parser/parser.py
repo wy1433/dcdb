@@ -19,9 +19,10 @@ class Parser():
         @param ctx:  Context
         @rtype: ErrInvalidSql
         '''
-        sql = ctx.sql.strip()
-        p=re.compile(r'(.*?between.*?)(and)(.*)')
-        sql = p.sub(r'\1 between_and\3',sql)
+#         sql = ctx.sql.strip()
+#         p=re.compile(r'(.*?between.*?)(and)(.*)')
+#         sql = p.sub(r'\1 between_and\3',sql)
+        sql = PreParse(ctx.sql)
         stmt = None
         err = None
         keyword = sql.split()[0].lower()

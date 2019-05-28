@@ -3,12 +3,13 @@ from meta.model import FieldType, IndexType
 from number import EncodeInt, DecodeInt
 from mylog import logger
 
+MaxRowID = 0x0FFFFFFFFFFFFFFF
+
 def EncodeRowid(rowid):
     '''
     @param rowid: int
     @return: str
     '''
-    # return '%08x' % rowid
     return EncodeInt("", rowid)
 
 
@@ -17,7 +18,9 @@ def DecodeRowid(s):
     @param s: str
     @return: int
     '''
-    return int(s)
+    _, v, err = DecodeInt(s)
+    assert err is None
+    return v
 
 
 def EncodeValue(value, fieldType):
@@ -61,9 +64,14 @@ def EncodeIndexKey(rowid, value, fieldType, indexType):
     v = EncodeValue(value, fieldType)
     if indexType == IndexType.UNIQUE:
         s = v
+        # used for not include for start and not include end
+        # for read only, will never used for write
+        # so, this can ignore by decode
+        if rowid == MaxRowID: 
+            s += '\1'
     else:
         r = EncodeRowid(rowid)
-        s = '%s.%s' % (v, r)
+        s = '%s\0%s' % (v, r)
     return s
 
 
@@ -72,7 +80,7 @@ def DecodeIndexKey(index_key, fieldType, indexType):
         s = index_key
         r = None
     else:
-        s, r = index_key.rsplit(".", 1)
+        s, r = index_key.rsplit('\0', 1)
     
     v = DecodeValue(s, fieldType)
     return v, r

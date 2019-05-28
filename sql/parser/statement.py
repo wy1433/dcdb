@@ -27,6 +27,13 @@ class ResultField(object):
     def __or__(self, rhs):
         return dict.fromkeys(self.pairs.viewkeys() | rhs.pairs.viewkeys())
 
+
+def PreParse(sql):
+    sql = sql.strip()
+    p=re.compile(r'(.*?between.*?)(and)(.*)')
+    sql = p.sub(r'\1 between_and\3',sql)
+    return sql
+
     
 class Statement(object):
     def __init__(self, text=None):
@@ -67,36 +74,49 @@ class RollBackStmt(Statement):
 class ExprNode(Statement):
     def __init__(self, text=None):
         super(ExprNode, self).__init__(text)
-        self.ResultField = ResultField()
+#         self.ResultField = ResultField()
         
     def Parse(self):
         pass
     
     @staticmethod
     def GetExpr(text):
-        pattern = re.compile(r'and|or', re.I)
-        m = pattern.search(text)
-        expr = None
+        p = re.compile(r'(.*)\s+(and|or)\s+(.*)', re.I)
+        m = p.match(text)
         if m:
-            if m.group().lower() == 'and':
-                p = re.compile(r'(.*?)\s+and\s+(.*)', re.I)
-                l, r = p.match(text).groups()
-                expr = IntersectionExpr(text, ltext=l, rtext=r)
-                expr.Parse()
+            l, op, r = m.groups()
+            if op.lower() == 'and':
+                expr = IntersectionExpr('and', ltext=l, rtext=r)
             else:
-                p = re.compile(r'(.*?)\s+or\s+(.*)', re.I)
-                l, r = p.match(text).groups()
-                expr = UnionExpr(text, ltext=l, rtext=r)
-                expr.Parse()
+                expr = UnionExpr('or', ltext=l, rtext=r)
         else:
             expr = ConditionExpr(text)
-            expr.Parse()
-
+        expr.Parse()
+        return expr
+    
+    def __repr__(self, level=0):
+        # PreOrderTraverse
+#         ret = "\t"*level+repr(self.text)+"\n"
+#         if not isinstance(self, ConditionExpr):
+#             ret += self.lexpr.__repr__(level+1)
+#             ret += self.rexpr.__repr__(level+1)
+#         return ret
+        
+        # InOrderTraverse
+        if isinstance(self, ConditionExpr):
+            ret = "\t"*level+repr(self.text)+"\n"
+        else:
+            ret = self.lexpr.__repr__(level+1)
+            ret += "\t"*level+repr(self.text)+"\n"
+            ret += self.rexpr.__repr__(level+1)
+        return ret
+    
+        
 
 # class ConditionType(IntEnum):
 #     ConditionTypeEquals       = 1
 #     ConditionTypeIn           = 2
-#     ConditionTypeRangeScan    = 3 
+#     ConditionTypeRangeScan    = 3
    
 
 class ConditionExpr(ExprNode):
@@ -107,7 +127,8 @@ class ConditionExpr(ExprNode):
         c = v
         c in (v1, v2, v3)
     '''
-    def __init__(self, text, column=None, start=None, end=None, value=None, values=None):
+    def __init__(self, text, column=None, start=None, end=None, 
+                 value=None, values=None, include_start=False, include_end=False):
         '''
         @param column: ColumnInfo
         @param start: start value of column, None declare no limit.
@@ -120,33 +141,48 @@ class ConditionExpr(ExprNode):
         self.end = end
         self.value = value
         self.values = values
-        self.include_start = False
-        self.include_end = False
+        self.include_start = include_start
+        self.include_end = include_end
+        self.table = None
     
     def Parse(self):
-        infos = self.text.split()
+#         infos = self.text.split()
+        
+        infos = re.split('[()\"\',\s]',self.text)
+        infos = [x for x in infos if x]
+
         self.column = infos[0]
         op = infos[1]
         if op == '>' :
-            self.start = infos[2]
-            self.end = None
+            self.start = infos[2].strip('(),\'\"')
+            self.include_start = False
+        elif op == '>=':
+            self.start = infos[2].strip('(),\'\"')
+            self.include_start = True
         elif op == '<':
-            self.start = None
-            self.end = infos[2]
-            self.ConditionType = ConditionType.ConditionTypeRangeScan
+            self.end = infos[2].strip('(),\'\"')
+            self.include_end = False
+        elif op == '<=':
+            self.end = infos[2].strip('(),\'\"')
+            self.include_end = True
         elif op == 'between':
-            self.start = infos[2]
-            self.end = infos[4]
-            self.ConditionType = ConditionType.ConditionTypeRangeScan
+            self.start = infos[2].strip('(),\'\"')
+            self.include_start = True
+            self.end = infos[4].strip('(),\'\"')
+            self.include_end = True
         elif op == '=':
-            self.value = infos[2]
-            self.ConditionType = ConditionType.ConditionTypeEquals
-#             self.start = infos[2]
-#             self.end = infos[2]
-#             self.ConditionType = ConditionType.ConditionTypeRangeScan
-        elif op == 'in': # TODO
-            self.values = [x.strip('(),') for x in infos[2:]]
-            self.ConditionType = ConditionType.ConditionTypeIn
+            self.value = infos[2].strip('(),\'\"')
+        elif op == 'in':
+            self.values = [x.strip('(),\'\"') for x in infos[2:]]
+        else:
+            return ErrInvalidSql
+        
+        logger.debug("col=%s,start=%s,si=%s,end=%s,ei=%s,value=%s,values=%s",
+                     self.column, 
+                     self.start, self.include_start,
+                     self.end, self.include_end,
+                     self.value, self.values
+                     )
             
 
 class UnionExpr(ExprNode):
@@ -158,7 +194,7 @@ class UnionExpr(ExprNode):
         @param lexpr: ExprNode , left operand
         @param rexpr: ExprNode , right operand
         '''
-        super(ConditionExpr, self).__init__(text)
+        super(UnionExpr, self).__init__(text)
         self.ltext = ltext
         self.rtext = rtext
         self.lexpr = lexpr
@@ -178,7 +214,7 @@ class IntersectionExpr(ExprNode):
         @param lexpr: ExprNode , left operand
         @param rexpr: ExprNode , right operand
         '''
-        super(ConditionExpr, self).__init__(text)
+        super(IntersectionExpr, self).__init__(text)
         self.ltext = ltext
         self.rtext = rtext
         self.lexpr = lexpr
@@ -288,7 +324,7 @@ class DeleteStmt(Statement):
         DELETE FROM table_name
         WHERE some_column=some_value;
         '''
-        p = re.compile(r"delete\s+from\s+(.*?)\s+where\s+(.*)\s+", re.I)
+        p = re.compile(r"delete\s+from\s+(.*?)\s+where\s+(.*)", re.I)
         m = p.match(self.text)
         if m:
             f, w = m.groups()
@@ -316,7 +352,7 @@ class UpdateStmt(Statement):
         SET column1=value1,column2=value2,...
         WHERE some_column=some_value;
         '''
-        p = re.compile(r"update\s+(.*?)\s+set\s+(.*?)\s+where\s+(.*)\s+", re.I)
+        p = re.compile(r"update\s+(.*?)\s+set\s+(.*?)\s+where\s+(.*)", re.I)
         m = p.match(self.text)
         if m:
             t, s, w = m.groups()
@@ -332,13 +368,23 @@ class UpdateStmt(Statement):
             return ErrInvalidSql
        
 if __name__ == '__main__':
-    sql = '''SELECT a, b, c From t \
-        WHERE a > 10 \
-        AND   b < -10 \
-        OR    d between -10 in 10 \
-        OR    e in ("a","b","c") \
-        AND   f = "foo"
-        '''
-    s = SelectStmt(sql)
-    s.Parse()
+#     sql = '''SELECT a, b, c From t \
+#         WHERE a > 10 \
+#         AND   b < -10 \
+#         OR    d between -10 in 10 \
+#         OR    e in ("a","b","c") \
+#         AND   f = "foo"
+#         '''
+#     s = SelectStmt(sql)
+#     s.Parse()
+    
+    w = '''a > 10 \
+    AND   b < -10 \
+    OR    d between -10 in 10 \
+    OR    e in ("a","b","c") \
+    AND   f = "foo"
+    '''
+    s = ExprNode.GetExpr(w)
+    print repr(s)
+    
     
