@@ -1,3 +1,4 @@
+# -*-coding:utf-8 -*-
 # from flask.globals import request
 from flask import Flask, session, redirect, url_for, escape, request
 import json
@@ -19,16 +20,19 @@ def index():
         session_id = session.get('session_id')
         if not session_id:
             return ret
-        
         sql = request.form['sql']
+        sql = sql.encode('utf-8')
+        logger.debug('sql=%s', sql)
         ret = server.Run(sql, session_id)
-        return ret
+        resp = json.dumps(ret,  indent = 4)
+        logger.debug('resp=%s',resp)
+        return resp
 #         return 'sid=%d, sql=%s\n' % (session_id, sql)
     
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if 'session_id' in session:
+    if 'session_id' in session and server.session_pool.IsValid(session['session_id']):
         ret = 'Already Logged in, session_id=%d\n' % session['session_id']
         logger.debug(ret)
         return ret

@@ -9,7 +9,8 @@ class Status():
         @param err: util.error.KvError
         '''
         self.err = err
-#         self.inTrans = inTrans
+        self.start_time = time.time()
+
         self.autoCommit = autoCommit
         self.foundRows = foundRows  # for select
         self.affectedRows = affectedRows  # for update/delete/insert
@@ -17,17 +18,21 @@ class Status():
     
     def Info(self):
         info = dict()
+        info['autoCommit'] = self.autoCommit
+        info['time'] = time.time() - self.start_time
+        
         if self.err:
             info['code'] = self.err.code
             info['msg'] = self.err.msg
-#         info['inTrans'] = self.inTrans
-        info['autoCommit'] = self.autoCommit
+            return info
+        
         if self.foundRows:
             info['foundRows'] = self.foundRows
         if self.affectedRows:
             info['affectedRows'] = self.affectedRows
         if self.lastInsertId:
             info['lastInsertId'] = self.lastInsertId
+        
         return info
         
 class Context():

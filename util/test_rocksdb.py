@@ -85,11 +85,26 @@ def test_prefix():
     it = db.iteritems()
     it.seek(prefix)
     print dict(it)
+    del db
     # prints {b'00002.z': b'z', b'00002.y': b'y', b'00002.x': b'x'}
     # print dict(itertools.takewhile(lambda item: item[0].startswith(prefix), it))
+    
+def test_insert():
+    opts = rocksdb.Options()
+    opts.create_if_missing=True
+    db = rocksdb.DB('test.db', opts)
+    
+    for i in range(10000):
+        k = 'k%016x' % i
+        v = 'v%016x' % i
+#         print k, v
+        db.put(k, v) 
+    
+
 
 if __name__ == '__main__':
-    test_prefix()
+#     test_prefix()
+    test_insert()
 #     start = None
 #     end = None
 #     opts, args = getopt.getopt(sys.argv[1:],"s:e:i")

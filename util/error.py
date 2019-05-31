@@ -38,6 +38,8 @@ ErrParser = DBError(100000, "Parser Failed")
 ErrTxnAlreadyExists = DBError(100001, "NewTxn Failed, commit or rollback first")
 ErrExecutor = DBError(100002, "Executor Failed")
 
+# ErrInvalidSessionID = DBError(100003, "invalid session id")
+
 
 class KvError(BaseError):
     def __init__(self, code, msg):

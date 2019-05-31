@@ -35,11 +35,18 @@ class Server():
         ctx.store = self.store
                 
         # 2. init session
+        err = None
         if session_id is None:
             session_id, err = self.login()
         if err:
-            return session_id, err
-        session = self.session_pool.Get(session_id)        
+            ctx.SetErr(err)
+            ret = self.WriteResult(ctx)
+            return  ret
+        session = self.session_pool.Get(session_id)
+#         if session is None:
+#             ctx.SetErr(ErrInvalidSessionID)
+#             ret = self.WriteResult(ctx)
+#             return ret
         ctx.session = session
         
         # 3. init conn and execute sql

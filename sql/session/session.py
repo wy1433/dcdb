@@ -56,6 +56,7 @@ class Session():
                 err = self.CommitTxn(ctx)
         else:
             err = ctx.executor.Execute()
+        ctx.SetErr(err)
         return err
                                   
     def execute(self, ctx):
@@ -215,4 +216,6 @@ class SessionPool():
         if session_id in self.sessions:
             del self.sessions[session_id]
         self.lock.UnLock()
-    
+        
+    def IsValid(self, session_id):
+        return session_id in self.sessions

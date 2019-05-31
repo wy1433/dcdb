@@ -228,6 +228,7 @@ class SelectExec(Executor):
         # 2. set to sorted list 
         rids = list(rowids)
         rids.sort()
+        ctx.status.foundRows += len(rowids)
         
         # 3. get field by rids
         fields = stmt.Fields

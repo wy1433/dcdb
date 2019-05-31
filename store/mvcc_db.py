@@ -491,6 +491,7 @@ class MvccDB(object):
         self.db_name = db_name
         opts = rocksdb.Options()
         opts.create_if_missing = True
+#         opts.write_buffer_size = 1024
         self.db = rocksdb.DB(conf.dataPath + "/store/" + db_name, opts)
 #         column_families = [b"default", b"lock", b"write"]
 #         self.db = rocksdb.DB('test.db', opts, column_families=column_families)
@@ -654,7 +655,7 @@ class MvccDB(object):
         err = None
         for k in keys :
             err = commitKey(self.db, batch, k, startTS, commitTS)
-            logger.info("commitKey, key=%s,startTS=%d,commitTS=%d, err=%s" % (k, startTS, commitTS, err))
+            logger.debug("commitKey, key=%s,startTS=%d,commitTS=%d, err=%s" % (k, startTS, commitTS, err))
             if err != nil :
                 break
         

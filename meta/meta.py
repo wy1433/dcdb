@@ -6,7 +6,7 @@ from infoschema import DBInfo
 class MetaNode(object):
 
     def __init__(self, tables):
-        self.db_info = DBInfo(tables)
+        self.db_info = DBInfo(tables=tables)
         self.oracle = Oracle()
                 
     def GetTableInfoByID(self, table_id):
