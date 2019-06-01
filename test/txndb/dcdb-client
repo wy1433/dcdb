@@ -1,0 +1,41 @@
+#!/bin/bash
+
+ip=127.0.0.1
+port=9000
+
+function login() {
+    curl -c cookieI -X POST 'http://'${ip}':'${port}'/login'
+    curl -c cookieA -X POST 'http://'${ip}':'${port}'/login'
+    curl -c cookieB -X POST 'http://'${ip}':'${port}'/login'
+}
+
+function exesql() {
+    cookie=$1
+    # sql=$2
+    sql=${@:2}
+    # echo $sql
+    cmd="curl -b $cookie -X POST -d  'sql=$sql'  'http://${ip}:${port}/'"
+    echo $cmd
+    eval $cmd
+    date "+%Y-%m-%d %H:%M:%S"
+    # echo ""
+    # curl -b $cookie -X POST -d  'sql='${@:2}''  'http://'${ip}':'${port}'/'
+}
+
+case "$1" in
+    login)
+        login
+        ;;
+    i)
+        exesql cookieI $2
+        ;;
+    a)
+        exesql cookieA $2
+        ;;
+    b)
+        exesql cookieB $2
+        ;;
+    *)
+        echo "Usage: dcdb-client login|i|a|b"
+        ;;
+esac

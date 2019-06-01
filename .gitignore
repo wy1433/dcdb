@@ -5,3 +5,6 @@
 .settings
 *.db
 /data
+*.log
+cookie*
+log.txt
