@@ -29,8 +29,8 @@ It is  using Flask as a web server framework and support http post api to client
       + SQL WHERE 子句 - WHERE 列 运算符 值
           - =
           - <> : `NO`
-          - >  : `NO`
-          - <  : `NO`
+          - >  : 
+          - <  : 
           - >=	 
           - <=
           - BETWEEN:`NO`
@@ -45,10 +45,10 @@ It is  using Flask as a web server framework and support http post api to client
       + SQL UNION :`NO`
       + SQL 函数 :`NO`
       + SQL INDEX
-           - 唯一索引：`NO`
+           - 唯一索引：
            - 非唯一索引
            - 全文索引：`NO`
-      + SQL 事物 : `NO`   
+      + SQL 事物   
     + DDL `NO`
       - CREATE DATABASE - 创建新数据库
       - ALTER DATABASE - 修改数据库
@@ -57,5 +57,3 @@ It is  using Flask as a web server framework and support http post api to client
       - DROP TABLE - 删除表
       - CREATE INDEX - 创建索引（搜索键）
       - DROP INDEX - 删除索引
-      
-
