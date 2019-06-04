@@ -1,0 +1,24 @@
+#!/bin/bash
+
+
+# echo "Usage: dcdb-client login|i|a|b"
+ip=127.0.0.1
+port=9000
+
+
+function exesql() {
+    sql=${@:1}
+    # echo $sql
+    cmd="curl -X POST -d  'sql=$sql'  'http://${ip}:${port}/'"
+    echo $cmd
+    eval $cmd
+    date "+%Y-%m-%d %H:%M:%S"
+}
+
+if [ $# -ne 1 ]; then
+    echo "Usage: dcdb-cli sql"
+    echo $#
+    exit
+else
+    exesql $1
+fi
