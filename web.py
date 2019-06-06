@@ -13,21 +13,27 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def index():
     if request.method == 'POST':
-        if 'sql' not in request.form:
+#         if 'sql' not in request.form:
+#             return 'no sql\n'
+        if 'sql' in request.form:
+            sql = request.form['sql']
+            format = 'json'
+        elif 's' in request.form:
+            sql = request.form['s']
+            format = 'str'
+        else:
             return 'no sql\n'
         
         ret = login()
         session_id = session.get('session_id')
         if not session_id:
             return ret
-        sql = request.form['sql']
+        
         sql = sql.encode('utf-8')
         logger.debug('sql=%s', sql)
-        ret = server.Run(sql, session_id)
-        resp = json.dumps(ret,  indent = 4)
+        resp = server.Run(sql, session_id, format)
         logger.debug('resp=%s',resp)
         return resp
-#         return 'sid=%d, sql=%s\n' % (session_id, sql)
     
 
 @app.route('/login', methods=['GET', 'POST'])

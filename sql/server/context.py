@@ -73,7 +73,7 @@ class Context():
         end_time = time.time()
         return end_time - self.start_time
     
-def DataRowsString(fields, rows):
+def WriteDataSets(fields, rows, usetime):
     fi = ':>20d'
     fs = ':<20s'
     if not (rows and len(rows)):
@@ -108,7 +108,18 @@ def DataRowsString(fields, rows):
         r = frow.format(*row)
         info += '%s\n' % r
     info += '%s\n' % sepline
-    info += '%d rows in set (%.2f sec)' % (len(rows), 0)
+    info += '%d rows in set (%.2f sec)' % (len(rows), usetime)
+    return info
+
+def WriteErr(err):
+    '''
+    @param err: util.error.KvError
+    '''
+    info = "ERROR %d: %s" % (err.code, err.msg)
+    return info
+
+def WriteOk(affectedRows, usetime):
+    info = "Query OK, %d row affected (%.2f sec)" % (affectedRows, usetime)
     return info
         
 if __name__ == '__main__':
@@ -117,4 +128,4 @@ if __name__ == '__main__':
         [0L, 'n0', 5L], 
         [1L, 'n1', 5L],
         ]             
-    print DataRowsString(fields, rows) 
+    print WriteDataSets(fields, rows) 

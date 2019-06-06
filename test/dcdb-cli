@@ -10,7 +10,7 @@ function exesql() {
     sql=${@:1}
     # echo $sql
     cmd="curl -X POST -d  'sql=$sql'  'http://${ip}:${port}/'"
-    echo $cmd
+    # echo $cmd
     eval $cmd
     date "+%Y-%m-%d %H:%M:%S"
 }

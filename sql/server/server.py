@@ -1,9 +1,10 @@
+import json
 from util.counter import Counter
 from sql.server.conn import ClientConn
 from sql.kv.dckv import DckvStore
 from sql.session.session import Session, SessionPool
 from mylog import logger
-from sql.server.context import Context, Status
+from sql.server.context import Context, Status, WriteDataSets, WriteOk, WriteErr
 
 SessionCounter = Counter()
 ConnectCounter = Counter()
@@ -14,7 +15,7 @@ class Server():
         self.store = DckvStore()
         self.session_pool = SessionPool()        
     
-    def Run(self, sql, session_id=None):
+    def Run(self, sql, session_id=None, format = 'json'):
         ''' Execute client's command and return response.
         command is a sql string request by http post request.
         sql is one of those kinds below:
@@ -56,8 +57,12 @@ class Server():
         client_conn.Run(ctx)
         
         # 4. write result to response
-        ret = self.WriteResult(ctx)
-        return ret
+        if format == 'str':
+            resp = self.WriteHumanResult(ctx)
+        else:
+            ret = self.WriteResult(ctx)
+            resp = json.dumps(ret,  indent = 4)
+        return resp
     
     def login(self):
         '''
@@ -86,6 +91,21 @@ class Server():
         if ctx.rows:
             resp['rows'] = ctx.rows
         return resp
+    
+    def WriteHumanResult(self, ctx):
+        '''
+        @param ctx: Context
+        @return: str
+        '''
+        ret = "Unknwon"
+        if ctx.status and ctx.status.err:
+            ret = WriteErr(ctx.status.err)
+        elif ctx.status and ctx.status.affectedRows:
+            ret = WriteOk(ctx.status.affectedRows, ctx.TimeUsed())
+        elif ctx.fields and ctx.rows:
+            ret = WriteDataSets(ctx.fields, ctx.rows, ctx.TimeUsed())
+        return ret
+        
         
 if __name__ == '__main__':
     server = Server()
