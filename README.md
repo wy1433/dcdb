@@ -48,7 +48,7 @@ It is  using Flask as a web server framework and support http post api to client
            - 唯一索引：
            - 非唯一索引
            - 全文索引：`NO`
-      + SQL 事物: `SSI`
+      + SQL 事务: `SSI`
     + DDL `NO`
       - CREATE DATABASE - 创建新数据库
       - ALTER DATABASE - 修改数据库
