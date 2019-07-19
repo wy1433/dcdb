@@ -4,8 +4,9 @@ if [ "$pid" ]; then
     echo "stop: "$pid
     kill -9 $pid
 fi
-
-rm log.txt
+if [ -f log.txt ]; then
+    rm log.txt
+fi
 
 rm -rf data/meta/*
 rm -rf data/store/*

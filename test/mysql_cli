@@ -9,11 +9,11 @@ port=9000
 function exesql() {
     sql=${@:1}
     echo $sql
-    cmd="curl -X POST -d  'sql=$sql'  'http://${ip}:${port}/'"
+    cmd="curl -X POST -d  's=$sql'  'http://${ip}:${port}/'"
     # echo $cmd
     eval $cmd
-    echo -n " "
-    date "+%Y-%m-%d %H:%M:%S"
+    echo ""
+    # date "+%Y-%m-%d %H:%M:%S"
 }
 
 if [ $# -ne 1 ]; then

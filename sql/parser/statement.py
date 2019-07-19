@@ -30,7 +30,7 @@ class ResultField(object):
 
 def PreParse(sql):
     sql = sql.strip()
-    p=re.compile(r'(.*?between.*?)(and)(.*)')
+    p=re.compile(r'(.*?between.*?)(and)(.*)', re.I)
     sql = p.sub(r'\1 between_and\3',sql)
     return sql
 
@@ -152,7 +152,7 @@ class ConditionExpr(ExprNode):
         infos = [x for x in infos if x]
 
         self.column = infos[0]
-        op = infos[1]
+        op = infos[1].lower()
         if op == '>' :
             self.start = infos[2].strip('(),\'\"')
             self.include_start = False
@@ -165,7 +165,7 @@ class ConditionExpr(ExprNode):
         elif op == '<=':
             self.end = infos[2].strip('(),\'\"')
             self.include_end = True
-        elif op == 'between':
+        elif op.to_lower() == 'between':
             self.start = infos[2].strip('(),\'\"')
             self.include_start = True
             self.end = infos[4].strip('(),\'\"')
