@@ -165,7 +165,7 @@ class ConditionExpr(ExprNode):
         elif op == '<=':
             self.end = infos[2].strip('(),\'\"')
             self.include_end = True
-        elif op.to_lower() == 'between':
+        elif op == 'between':
             self.start = infos[2].strip('(),\'\"')
             self.include_start = True
             self.end = infos[4].strip('(),\'\"')
