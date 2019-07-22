@@ -4,14 +4,19 @@ from flask import Flask, session, redirect, url_for, escape, request
 import json
 from sql.server.server import Server
 from mylog import logger
+from guppy import hpy
+
+h = hpy()
 
 server = Server()
 
 app = Flask(__name__)
 
 # curl -X POST -d  'sql=select * from t'  'http://localhost:9000/'
+
 @app.route('/', methods=['POST'])
 def index():
+    logger.error(h.heap())
     if request.method == 'POST':
 #         if 'sql' not in request.form:
 #             return 'no sql\n'
@@ -73,4 +78,4 @@ app.secret_key = '\x13p\xda\xc8\xb9.l\x7f\x19+\xfe\x93\x94\xa5\x1c\x8d\xf0\xe0;S
 
 if __name__ == '__main__':
 #     app.debug = True
-    app.run(host='0.0.0.0',port=9000)
+    app.run(host='0.0.0.0',port=9000, threaded = True)

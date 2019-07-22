@@ -6,6 +6,9 @@ from sql.session.session import Session, SessionPool
 from mylog import logger
 from sql.server.context import Context, Status, WriteDataSets, WriteOk, WriteErr
 
+# from memory_profiler import profile
+
+
 SessionCounter = Counter()
 ConnectCounter = Counter()
 RowCounter = Counter()
@@ -13,8 +16,8 @@ RowCounter = Counter()
 class Server():
     def __init__(self):
         self.store = DckvStore()
-        self.session_pool = SessionPool()        
-    
+        self.session_pool = SessionPool()
+#     @profile(stream = open('memory_profiler.log','w+'))
     def Run(self, sql, session_id=None, format = 'json'):
         ''' Execute client's command and return response.
         command is a sql string request by http post request.
