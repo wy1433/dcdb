@@ -67,7 +67,16 @@ class StatementTestCase(unittest.TestCase):
         
         self.assertEqual(s.Table, 'student')
         self.assertEqual(s.Fields, ['id', 'name', 'age'])
-        self.assertEqual(s.Setlist, ['1', 'foo', '10'])
+        self.assertEqual(s.Setlist, [['1', 'foo', '10']])
+        
+        sql = "insert into student (id, name, age) values (1, 'foo', 10), (2, 'bob', 12), (3, 'tom', 9);"
+        s = InsertStmt(sql)
+        r = s.Parse()
+        self.assertIsNone(r)
+        
+        self.assertEqual(s.Table, 'student')
+        self.assertEqual(s.Fields, ['id', 'name', 'age'])
+        self.assertEqual(s.Setlist, [['1', 'foo', '10'],  ['2', 'bob', '12'], ['3', 'tom', '9']])
         
     def test_ConditionExpr(self):
         ''' Expression like this:

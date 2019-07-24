@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def index():
-    logger.error(h.heap())
+#     logger.error(h.heap())
     if request.method == 'POST':
 #         if 'sql' not in request.form:
 #             return 'no sql\n'

@@ -282,6 +282,35 @@ class SelectStmt(Statement):
 
 # InsertStmt is a statement to insert new rows into an existing table.
 # See https://dev.mysql.com/doc/refman/5.7/en/insert.html
+# class InsertStmt(Statement):
+#     def __init__(self, text):
+#         super(InsertStmt, self).__init__(text)
+#         self.Table = None
+#         # Fields is the select expression list.
+#         self.Fields = list() # type list[ColumnInfo]
+#         self.Setlist = list() # list[value of column to be set]
+#         
+#     def Parse(self):
+#         '''sql like this:
+#         INSERT INTO table_name (column1,column2,column3,...)
+#         VALUES (value1,value2,value3,...);
+#         '''        
+#         p = re.compile(r"insert\s+into\s+(.*?)\s+\((.*?)\)\s+values\s+\((.*?)\)", re.I)
+#         m = p.match(self.text)
+#         if m:
+#             t, c, v = m.groups()
+#             self.Table = t
+#             self.Fields = c.split(',')
+#             self.Fields = [f.strip() for f in self.Fields]
+#             self.Setlist = v.split(',')
+#             self.Setlist = [v.strip().strip("\'\"") for v in self.Setlist]
+#             logger.debug('InsertStmt: table=%s, fields=%s, values=%s', 
+#                          self.Table, self.Fields, self.Setlist)
+#         else:
+#             return ErrInvalidSql
+
+# InsertStmt is a statement to insert new rows into an existing table.
+# See https://dev.mysql.com/doc/refman/5.7/en/insert.html
 class InsertStmt(Statement):
     def __init__(self, text):
         super(InsertStmt, self).__init__(text)
@@ -293,17 +322,21 @@ class InsertStmt(Statement):
     def Parse(self):
         '''sql like this:
         INSERT INTO table_name (column1,column2,column3,...)
-        VALUES (value1,value2,value3,...);
+        VALUES (v11,v12,v13,...), (v21,v22,v23,...);
         '''        
-        p = re.compile(r"insert\s+into\s+(.*?)\s+\((.*?)\)\s+values\s+\((.*?)\)", re.I)
+        p = re.compile(r"insert\s+into\s+(.*?)\s+\((.*?)\)\s+values\s+(.*)", re.I)
         m = p.match(self.text)
         if m:
             t, c, v = m.groups()
             self.Table = t
             self.Fields = c.split(',')
             self.Fields = [f.strip() for f in self.Fields]
-            self.Setlist = v.split(',')
-            self.Setlist = [v.strip().strip("\'\"") for v in self.Setlist]
+            p1 = re.compile(r"\((.*?)\)", re.I)
+            vs = re.findall(p1, v)
+            for value in vs:
+                set_value = value.split(',')
+                set_value = [value.strip().strip("\'\"") for value in set_value]
+                self.Setlist.append(set_value)
             logger.debug('InsertStmt: table=%s, fields=%s, values=%s', 
                          self.Table, self.Fields, self.Setlist)
         else:

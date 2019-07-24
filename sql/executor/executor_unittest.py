@@ -97,6 +97,10 @@ class ExecutorTestCase(unittest.TestCase):
         self.mustExecOk("insert into student (id, name, age) values (2, 'foo2', 12)")
         self.mustExecErr("insert into student (id, name, age) values (2, 'foo3', 13)", 
                          ErrKeyExists)
+        
+        self.mustExecOk("insert into student (id, name, age) values (3, 'foo3', 13), (4, 'foo4', 14);")
+        self.mustExecErr("insert into student (id, name, age) values (5, 'foo5', 15), (5, 'foo5', 15);",
+                         ErrKeyExists)
     
     def mustGetCond(self, cond, ids):
         sql = "select id, name, age from student where %s" % cond
