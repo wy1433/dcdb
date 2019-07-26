@@ -5,6 +5,7 @@ import rocksdb
 import threading
 from enum import IntEnum
 import unittest
+import struct
 
 import conf
 import config
@@ -12,6 +13,8 @@ from model import *
 # from util.codec.table import *
 from store.mvcc_db import MvccDB
 from mylog import logger
+
+from rocksdb.merge_operators import UintAddOperator
 
 def EncodePrimary(db_name, key):
     '''
@@ -44,6 +47,7 @@ class DBInfo(object):
         self.opts = rocksdb.Options()
         self.opts.create_if_missing = True
         self.opts.merge_operator = AssocCounter()
+#         self.opts.merge_operator = UintAddOperator()
         self.db = rocksdb.DB(conf.dataPath + "/meta/dbinfo", self.opts)
         self.__lock = threading.RLock()
          
@@ -142,28 +146,26 @@ class DBInfo(object):
             store.Close()
     
     def GetRowID(self, table_id):
-        '''Get current Rowkey, and set key = key +1 to MetaData'''
-        if table_id not in self.table_id_dict:
+        '''Get current Rowkey, and set key = key +1 to MetaData'''  
+        t =  self.GetTableInfoByID(table_id) #: :type t: TableInfo
+        if t is None:
             return -1
         with self.__lock:
+            if t.curr_rowid >= t.max_rowid:
+                t.max_rowid = self.GetRowIDFromDB(table_id)
+                t.curr_rowid = t.max_rowid - 10000
+            t.curr_rowid+= 1
+#             print t.curr_rowid
+            return t.curr_rowid
+    
+    def GetRowIDFromDB(self, table_id):
+        '''Get current Rowkey, and set key = key + delta to MetaData'''
+        with self.__lock:
             key = 'rowid_%d' % table_id
-            self.db.merge(key, b'1')
+            self.db.merge(key, b'10000')
             rowid = self.db.get(key)
             return int(rowid)
-#         with self.__lock:
-#             rowid = 0
-#             key = 'rowid_%d' % table_id
-#             try:
-#                 rowid = self.db.get(key)
-#                 rowid = int(rowid) + 1
-#             except Exception as e:
-#                 print e
-#                 
-#             try:
-#                 self.db.put(key, rowid)
-#             except Exception as e:
-#                 print e
-#             return key
+    
         
     def ResetRowID(self, table_id):
         with self.__lock:
@@ -323,9 +325,20 @@ class TestInfoSchema(unittest.TestCase):
         for t in threads:
             t.join()
         self.assertEqual(n, len(self.data))
+
+def test_GetRowID_profile():
+    import time
+    dbinfo = DBInfo()
+    for i in range(5):
+        st = time.time()
+        for _ in range(1000):
+            dbinfo.GetRowID(1)
+        logger.debug("use_time=%d", time.time() -st)
+    dbinfo.Close()
     
                        
 if __name__ == '__main__':
+#     test_GetRowID_profile()
     pass
     unittest.main()
 

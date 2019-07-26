@@ -51,6 +51,8 @@ class TableInfo():
     def __init__(self, id = None, name=None, columns=None):
         self.id = id
         self.name = name
+        self.curr_rowid = 0
+        self.max_rowid = 0
         self.columns = columns
         for c in self.columns: #: :type c: ColumnInfo
             c.SetTableInfo(self)

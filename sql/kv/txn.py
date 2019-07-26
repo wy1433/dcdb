@@ -10,14 +10,14 @@ from union_store import UnionStore
 
 nil = None
 
-# MaxTxnTimeUse = 600000  # Millisecond, 10 minutes
-# DefaultLockTTL = 120000  # Millisecond, 2  minutes
-# ScanLockInterval = 10  # second
+MaxTxnTimeUse = 600000  # Millisecond, 10 minutes
+DefaultLockTTL = 120000  # Millisecond, 2  minutes
+ScanLockInterval = 1000  # Millisecond
 
 # # speed up tests
-MaxTxnTimeUse = 6000  # Millisecond
-DefaultLockTTL = 3000  # Millisecond
-ScanLockInterval = 1000  # Millisecond
+# MaxTxnTimeUse = 6000  # Millisecond
+# DefaultLockTTL = 3000  # Millisecond
+# ScanLockInterval = 1000  # Millisecond
 
 # class Context():
 # 

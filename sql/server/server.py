@@ -1,4 +1,4 @@
-import json
+import json,time
 from util.counter import Counter
 from sql.server.conn import ClientConn
 from sql.kv.dckv import DckvStore
@@ -47,10 +47,6 @@ class Server():
             ret = self.WriteResult(ctx)
             return  ret
         session = self.session_pool.Get(session_id)
-#         if session is None:
-#             ctx.SetErr(ErrInvalidSessionID)
-#             ret = self.WriteResult(ctx)
-#             return ret
         ctx.session = session
         
         # 3. init conn and execute sql

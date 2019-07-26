@@ -2,10 +2,10 @@
 # -*-coding:utf-8 -*-
 # from sql.table.column import ColumnInfo
 
-import re
+import re, time
 from util.error import ErrInvalidSql
-from enum import IntEnum
 from mylog import logger
+
 
 class ResultField(object):
     def __init__(self, ColumnInfo = None, Referenced = False):
@@ -81,16 +81,25 @@ class ExprNode(Statement):
     
     @staticmethod
     def GetExpr(text):
-        p = re.compile(r'(.*)\s+(and|or)\s+(.*)', re.I)
+        # process "c between start  and end" case first
+        p = re.compile(r'(.*?)(and|or|)\s*(\S+\s+between\s+\S+\s+and\s+\S+\s+$)', re.I)
         m = p.match(text)
+        op = ""
+        # if Expr ends with  "c between start and end"
         if m:
             l, op, r = m.groups()
-            if op.lower() == 'and':
-                expr = IntersectionExpr('and', ltext=l, rtext=r)
-            else:
-                expr = UnionExpr('or', ltext=l, rtext=r)
+        else: 
+            p = re.compile(r'(.*)\s+(and|or)\s+(.*)', re.I)
+            m = p.match(text)        
+            if m:
+                l, op, r = m.groups()
+                
+        if op == "":
+            expr = ConditionExpr(text)      
+        elif op.lower() == 'and':
+            expr = IntersectionExpr('and', ltext=l, rtext=r)
         else:
-            expr = ConditionExpr(text)
+            expr = UnionExpr('or', ltext=l, rtext=r)    
         expr.Parse()
         return expr
     
@@ -282,35 +291,6 @@ class SelectStmt(Statement):
 
 # InsertStmt is a statement to insert new rows into an existing table.
 # See https://dev.mysql.com/doc/refman/5.7/en/insert.html
-# class InsertStmt(Statement):
-#     def __init__(self, text):
-#         super(InsertStmt, self).__init__(text)
-#         self.Table = None
-#         # Fields is the select expression list.
-#         self.Fields = list() # type list[ColumnInfo]
-#         self.Setlist = list() # list[value of column to be set]
-#         
-#     def Parse(self):
-#         '''sql like this:
-#         INSERT INTO table_name (column1,column2,column3,...)
-#         VALUES (value1,value2,value3,...);
-#         '''        
-#         p = re.compile(r"insert\s+into\s+(.*?)\s+\((.*?)\)\s+values\s+\((.*?)\)", re.I)
-#         m = p.match(self.text)
-#         if m:
-#             t, c, v = m.groups()
-#             self.Table = t
-#             self.Fields = c.split(',')
-#             self.Fields = [f.strip() for f in self.Fields]
-#             self.Setlist = v.split(',')
-#             self.Setlist = [v.strip().strip("\'\"") for v in self.Setlist]
-#             logger.debug('InsertStmt: table=%s, fields=%s, values=%s', 
-#                          self.Table, self.Fields, self.Setlist)
-#         else:
-#             return ErrInvalidSql
-
-# InsertStmt is a statement to insert new rows into an existing table.
-# See https://dev.mysql.com/doc/refman/5.7/en/insert.html
 class InsertStmt(Statement):
     def __init__(self, text):
         super(InsertStmt, self).__init__(text)
@@ -323,7 +303,7 @@ class InsertStmt(Statement):
         '''sql like this:
         INSERT INTO table_name (column1,column2,column3,...)
         VALUES (v11,v12,v13,...), (v21,v22,v23,...);
-        '''        
+        '''
         p = re.compile(r"insert\s+into\s+(.*?)\s+\((.*?)\)\s+values\s+(.*)", re.I)
         m = p.match(self.text)
         if m:
@@ -413,7 +393,7 @@ if __name__ == '__main__':
     
     w = '''a > 10 \
     AND   b < -10 \
-    OR    d between -10 in 10 \
+    OR    d between -10 and 10 \
     OR    e in ("a","b","c") \
     AND   f = "foo"
     '''

@@ -5,7 +5,7 @@ from sql.executor.executor import *
 from util.error import *
 from util.codec.table import *
 from mylog import logger
-
+import time
 
 class InsertExec(Executor):
     def __init__(self, ctx=None):
@@ -19,15 +19,15 @@ class InsertExec(Executor):
         stmt = ctx.stmt #: :type stmt: InsertStmt
         store = ctx.Store()
         txn = ctx.Txn()
-                    
+                
         table_info = store.meta.GetTableInfoByName(stmt.Table)
-        
         for set_value in stmt.Setlist:
             rowid = store.meta.GetRowID(table_info.id)
             ctx.status.lastInsertId = rowid
             ctx.status.affectedRows += 1
             
             for i in range(len(stmt.Fields)):
+                
                 field = stmt.Fields[i]
                 value = set_value[i]
                 c = store.meta.GetColumnInfoByName(stmt.Table, field)
@@ -39,6 +39,7 @@ class InsertExec(Executor):
                 idx_val = EncodeValue(rowid, FieldType.INT)
                 txn.Insert(row_key, row_val, dat)
                 err = txn.Insert(idx_key, idx_val, idx)
+                
                 if err:
                     return err
-        
+            

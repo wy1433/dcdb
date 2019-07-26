@@ -40,14 +40,18 @@ class Session():
         @param ctx: Context
         @return: err in parser or executor
         '''
+        t0 = time.time()
         # 1. sql string to statement
         err = self.parser.Parser(ctx)
+        t1 = time.time()
         
         # 2. statement to executor
         self.planner.BuildExecutor(ctx)
+        t2 = time.time()
         
         # 3. executor to txn
         if self.autocommit and self.IsDML(ctx):
+            
             self.BeginTxn(ctx)
             err = ctx.executor.Execute()
             if err:
@@ -56,7 +60,9 @@ class Session():
                 err = self.CommitTxn(ctx)
         else:
             err = ctx.executor.Execute()
+        t3 = time.time()
         ctx.SetErr(err)
+        logger.debug("all=%f,parser=%f,plan=%f,exec=%f", t3 -t0, t1-t0, t2-t1, t3 -t2 )
         return err
                                   
     def execute(self, ctx):
