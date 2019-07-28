@@ -82,7 +82,7 @@ class StatementTestCase(unittest.TestCase):
         ''' Expression like this:
         c > start
         c < end
-        c between start between_and end
+        c between start and end
         c = v
         c in (v1, v2, v3)
         '''
@@ -120,7 +120,7 @@ class StatementTestCase(unittest.TestCase):
         self.assertEqual(c.__dict__, expect.__dict__)
         
         
-        sql = "age between 5 between_and 10"
+        sql = "age between 5 and 10"
         c = ConditionExpr(sql)
         r = c.Parse()
         self.assertIsNone(r)
@@ -167,15 +167,15 @@ class StatementTestCase(unittest.TestCase):
         ''' Expression like this:
         c > start
         c < end
-        c between start between_and end
+        c between start and end
         c = v
         c in (v1, v2, v3)
         '''
-        sql = "age > 10 and age < 20 or id between 1 between_and 5 and name = 'bob' or age in (1, 3, 5)"
+        sql = "age > 10 and age < 20 or id between 1 and 5 and name = 'bob' or age in (1, 3, 5)"
         e = ExprNode.GetExpr(sql)
         e = self.mustEqualExpr(e, UnionExpr, "age in (1, 3, 5)")
         e = self.mustEqualExpr(e, IntersectionExpr, "name = 'bob'")
-        e = self.mustEqualExpr(e, UnionExpr, "id between 1 between_and 5")
+        e = self.mustEqualExpr(e, UnionExpr, "id between 1 and 5")
         e = self.mustEqualExpr(e, IntersectionExpr, "age < 20")
         e = self.mustEqualConditionExpr(e, "age > 10")
     

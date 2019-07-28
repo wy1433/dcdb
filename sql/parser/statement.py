@@ -82,7 +82,7 @@ class ExprNode(Statement):
     @staticmethod
     def GetExpr(text):
         # process "c between start  and end" case first
-        p = re.compile(r'(.*?)(and|or|)\s*(\S+\s+between\s+\S+\s+and\s+\S+\s+$)', re.I)
+        p = re.compile(r'(.*?)\s*(and|or|)\s*(\S+\s+between\s+\S+\s+and\s+\S+\s*$)', re.I)
         m = p.match(text)
         op = ""
         # if Expr ends with  "c between start and end"
