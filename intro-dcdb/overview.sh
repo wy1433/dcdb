@@ -5,6 +5,6 @@ cd $app
 
 
 echo -e "Section \033[1;31m $0 \033[0m start ..."
-cat README.md
+cat README.md | more
 echo ""
 echo -e "Section \033[1;31m $0 \033[0m end ..."

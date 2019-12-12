@@ -1,19 +1,20 @@
 #!/bin/bash
 
 echo -e "\033[1;31m dcdb intro \033[0m start ..."
-# cat << EOF
-# **********************************
-#     the following will be show:
-# **********************************
-#     1) overview
-#     2) project
-#     3) unittest
-#     4) keys
-#     5) feature
-#     6) beachmark
-#     7) txn
-# cd $app
-# EOF
+cat << EOF
+**********************************
+    the following will be show:
+**********************************
+    1) overview
+    2) project
+    3) unittest
+    4) keys
+    5) feature
+    6) beachmark
+    7) txn
+EOF
+read -r -p "press any key to continue ..." input
+
 bash overview.sh
 bash project.sh
 bash unittest.sh
